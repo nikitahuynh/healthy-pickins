@@ -222,7 +222,7 @@ function App() {
                 marginBottom: '0.25rem',
               }}
             >
-              <span>{item}</span>
+              
               <button
                 onClick={() => removeProduceItem(i)}
                 aria-label={`Remove ${item} from produce`}
@@ -230,6 +230,7 @@ function App() {
               >
                 ✕
               </button>
+              <span>{item}</span>
             </li>
           ))}
         </ul>
@@ -269,7 +270,6 @@ function App() {
                 marginBottom: '0.25rem',
               }}
             >
-              <span>{item}</span>
               <button
                 onClick={() => removePantryItem(i)}
                 aria-label={`Remove ${item} from pantry`}
@@ -277,6 +277,8 @@ function App() {
               >
                 ✕
               </button>
+              <span>{item}</span>
+
             </li>
           ))}
         </ul>
