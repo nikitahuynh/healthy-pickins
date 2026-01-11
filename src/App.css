@@ -142,3 +142,82 @@ section {
   justify-content: center;
   gap: 1rem;
 }
+
+/* Card Styles */
+.recipe-card {
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  background: white;
+  margin-bottom: 20px;
+}
+
+.recipe-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.ingredient-comparison {
+  display: flex;
+  gap: 20px;
+  margin-top: 15px;
+  font-size: 0.9rem;
+}
+
+.ing-column {
+  flex: 1;
+}
+
+.match-col { color: #2e7d32; }
+.missing-col { color: #c62828; }
+
+.click-hint {
+  font-size: 0.75rem;
+  color: #888;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.ingredient-phrase {
+  background: #f9f9f9;
+  padding: 10px;
+  border-radius: 8px;
+  font-style: italic;
+}
