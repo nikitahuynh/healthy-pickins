@@ -1,0 +1,127 @@
+/* Container and Typography */
+.App {
+  padding: 1rem;
+  font-family: 'Poppins', sans-serif;
+  position: relative;
+}
+
+.logo {
+  position: absolute;
+  top: 25px;
+  right: 25px;
+  width: 400px;
+  height: auto;
+  border-radius: 8px;
+}
+
+h1 {
+  color: forestgreen;
+}
+
+/* Meal Type Section */
+.meal-type-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  marginBottom: 1rem;
+}
+
+.meal-type-label {
+  font-weight: 600;
+}
+
+.selection-indicator {
+  margin-left: auto; /* Corrected from marginCenter */
+  color: #555;
+}
+
+/* Sections & Lists */
+section {
+  margin-bottom: 1rem;
+}
+
+.produce-title {
+  color: blue;
+}
+
+.pantry-title {
+  color: darkmagenta;
+}
+
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.item-list {
+  list-style: none;
+  padding: 0;
+}
+
+.item-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 4px;
+}
+
+/* Buttons */
+.btn-primary {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Recipe Card Styling */
+.recipe-section {
+  border-top: 2px solid #eee;
+  padding-top: 1rem;
+}
+
+.recipe-container {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #f9f9f9;
+}
+
+.recipe-card {
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 1rem;
+}
+
+.recipe-card h3 {
+  color: #333;
+  margin-top: 0;
+}
+
+.recipe-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.have-text { color: green; }
+.need-text { color: red; }
+
+.recipe-list {
+  font-size: 0.9rem;
+  padding-left: 1.2rem;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
