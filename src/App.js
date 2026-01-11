@@ -14,6 +14,7 @@ function App() {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedRecipe, setSelectedRecipe] = useState(null); // State for the popup
 
   const [produce, setProduce] = useState(() => {
     const saved = localStorage.getItem('ingredients');
@@ -54,7 +55,7 @@ function App() {
     setMealTypes(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // --- UPDATED FETCH LOGIC ---
+  // --- FETCH AND RANK LOGIC ---
   const handleFindRecipes = async () => {
     setLoading(true);
     setError(null);
@@ -70,28 +71,40 @@ function App() {
         return;
       }
 
-      // .cs (contains) for jsonb needs the value to look like a JSON array: ["item"]
-      // We escape the double quotes so Supabase sends valid JSON to the database
+      // 1. Get selected meal types for filtering
+      const selectedMeals = Object.entries(mealTypes)
+        .filter(([_, active]) => active)
+        .map(([name]) => name);
+
+      // 2. Build the OR query for partial matches
       const orQuery = allIngredients
         .map(ing => `ingredients.cs.["${ing}"]`)
         .join(',');
 
-      const { data, error: sbError } = await supabase
-        .from('recipes')
-        .select('*')
-        .or(orQuery);
+      let query = supabase.from('recipes').select('*').or(orQuery);
 
+      // Filter by meal type if any are selected
+      if (selectedMeals.length > 0) {
+        query = query.in('meal_type', selectedMeals);
+      }
+
+      const { data, error: sbError } = await query;
       if (sbError) throw sbError;
 
-      // Sorting the results so recipes with the MOST matches appear first
-      const userIngredients = allIngredients;
-      const sortedData = (data || []).sort((a, b) => {
-        const matchA = a.ingredients?.filter(i => userIngredients.includes(i.toLowerCase())).length || 0;
-        const matchB = b.ingredients?.filter(i => userIngredients.includes(i.toLowerCase())).length || 0;
-        return matchB - matchA;
+      // 3. Rank the recipes based on the count of matching ingredients
+      const rankedData = (data || []).map(recipe => {
+        const recipeIngredients = (recipe.ingredients || []).map(i => i.toLowerCase());
+        const matchCount = allIngredients.filter(input => 
+          recipeIngredients.includes(input)
+        ).length;
+
+        return { ...recipe, matchCount };
       });
 
-      setRecipes(sortedData);
+      // 4. Sort: Highest matches first
+      rankedData.sort((a, b) => b.matchCount - a.matchCount);
+
+      setRecipes(rankedData);
       setShowRecipes(true);
       setCurrentPage(0);
     } catch (err) {
@@ -101,8 +114,6 @@ function App() {
       setLoading(false);
     }
   };
-
-// end findrecipes
 
   const totalPages = Math.ceil(recipes.length / itemsPerPage);
   const currentRecipes = recipes.slice(
@@ -124,37 +135,39 @@ function App() {
         ))}
       </div>
 
-      <section>
-        <h2 className="produce-title">Produce</h2>
-        <div className="input-group">
-          <input value={produceInput} onChange={(e) => setProduceInput(e.target.value)} placeholder="e.g. Spinach" onKeyDown={(e) => e.key === 'Enter' && addProduce()} />
-          <button onClick={addProduce}>Add</button>
-          <button onClick={() => setProduce([])}>Clear</button>
-        </div>
-        <ul className="item-list">
-          {produce.map((item, i) => (
-            <li key={i} className="item-row">
-              <button onClick={() => setProduce(produce.filter((_, idx) => idx !== i))}>✕</button> {item}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <div className="input-sections">
+        <section>
+          <h2 className="produce-title">Produce</h2>
+          <div className="input-group">
+            <input value={produceInput} onChange={(e) => setProduceInput(e.target.value)} placeholder="e.g. Spinach" onKeyDown={(e) => e.key === 'Enter' && addProduce()} />
+            <button onClick={addProduce}>Add</button>
+            <button onClick={() => setProduce([])}>Clear</button>
+          </div>
+          <ul className="item-list">
+            {produce.map((item, i) => (
+              <li key={i} className="item-row">
+                <button onClick={() => setProduce(produce.filter((_, idx) => idx !== i))}>✕</button> {item}
+              </li>
+            ))}
+          </ul>
+        </section>
 
-      <section>
-        <h2 className="pantry-title">Pantry</h2>
-        <div className="input-group">
-          <input value={pantryInput} onChange={(e) => setPantryInput(e.target.value)} placeholder="e.g. Olive Oil" onKeyDown={(e) => e.key === 'Enter' && addPantry()} />
-          <button onClick={addPantry}>Add</button>
-          <button onClick={() => setPantry([])}>Clear</button>
-        </div>
-        <ul className="item-list">
-          {pantry.map((item, i) => (
-            <li key={i} className="item-row">
-              <button onClick={() => setPantry(pantry.filter((_, idx) => idx !== i))}>✕</button> {item}
-            </li>
-          ))}
-        </ul>
-      </section>
+        <section>
+          <h2 className="pantry-title">Pantry</h2>
+          <div className="input-group">
+            <input value={pantryInput} onChange={(e) => setPantryInput(e.target.value)} placeholder="e.g. Olive Oil" onKeyDown={(e) => e.key === 'Enter' && addPantry()} />
+            <button onClick={addPantry}>Add</button>
+            <button onClick={() => setPantry([])}>Clear</button>
+          </div>
+          <ul className="item-list">
+            {pantry.map((item, i) => (
+              <li key={i} className="item-row">
+                <button onClick={() => setPantry(pantry.filter((_, idx) => idx !== i))}>✕</button> {item}
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
 
       <div className="btn-group">
         <button onClick={handleFindRecipes} className="btn-primary" disabled={loading}>
@@ -169,31 +182,37 @@ function App() {
           <h2>Matches Found ({recipes.length})</h2>
           <div className="recipe-container">
             {currentRecipes.length > 0 ? (
-              currentRecipes.map((recipe, index) => (
-                <div key={index} className="recipe-card">
-                  {/* UPDATED: Using 'title' instead of 'name' */}
-                  <h3>{recipe.title}</h3>
-                  
-                  <div className="nutrition-bar">
-                    <span>🔥 {recipe.calories} kcal</span>
-                    <span>🍞 {recipe.carbs}g carbs</span>
-                    <span>🍗 {recipe.protein}g protein</span>
-                    <span>🥑 {recipe.fat}g fat</span>
-                  </div>
+              currentRecipes.map((recipe, index) => {
+                const userInventory = [...produce, ...pantry].map(i => i.toLowerCase().trim());
+                const recipeIngredients = recipe.ingredients || [];
+                const matched = recipeIngredients.filter(ing => userInventory.includes(ing.toLowerCase()));
+                const missing = recipeIngredients.filter(ing => !userInventory.includes(ing.toLowerCase()));
 
-                  <div className="recipe-grid">
-                    {/* UPDATED: Displaying 'ingredient_phrase' or 'ingredients' */}
-                    <div>
-                      <strong>Ingredients:</strong>
-                      <p className="ingredient-list">{recipe.ingredients?.join(', ')}</p>
+                return (
+                  <div key={index} className="recipe-card" onClick={() => setSelectedRecipe(recipe)}>
+                    <h3>{recipe.title}</h3>
+                    
+                    <div className="nutrition-bar">
+                      <span>🔥 {recipe.calories} kcal</span>
+                      <span>🍞 {recipe.carbs}g</span>
+                      <span>🍗 {recipe.protein}g</span>
+                      <span>🥑 {recipe.fat}g</span>
                     </div>
-                    <div>
-                      <strong>Instructions:</strong>
-                      <p className="instruction-text">{recipe.instructions}</p>
+
+                    <div className="ingredient-comparison">
+                      <div className="ing-column match-col">
+                        <strong>Matched:</strong>
+                        <ul>{matched.map((ing, i) => <li key={i}>✅ {ing}</li>)}</ul>
+                      </div>
+                      <div className="ing-column missing-col">
+                        <strong>Missing:</strong>
+                        <ul>{missing.map((ing, i) => <li key={i}>❌ {ing}</li>)}</ul>
+                      </div>
                     </div>
+                    <p className="click-hint">Click for full recipe</p>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p>No recipes found matching your ingredients.</p>
             )}
@@ -207,6 +226,26 @@ function App() {
             )}
           </div>
         </section>
+      )}
+
+      {/* POPUP MODAL */}
+      {selectedRecipe && (
+        <div className="modal-overlay" onClick={() => setSelectedRecipe(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setSelectedRecipe(null)}>✕</button>
+            <h2>{selectedRecipe.title}</h2>
+            <div className="modal-body">
+              <section>
+                <h4>Ingredient Details:</h4>
+                <p className="ingredient-phrase">{selectedRecipe.ingredient_phrase}</p>
+              </section>
+              <section>
+                <h4>Instructions:</h4>
+                <p className="instruction-text">{selectedRecipe.instructions}</p>
+              </section>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
