@@ -185,7 +185,7 @@ function App() {
         </label>
 
         {/* Small indicator of selection */}
-        <span style={{ marginLeft: 'auto', color: '#555' }}>
+        <span style={{ marginCenter: 'auto', color: '#555' }}>
           Selected: {selectedMealTypes.length ? selectedMealTypes.join(', ') : 'none'}
         </span>
       </div>
@@ -240,7 +240,7 @@ function App() {
 
       {/* PANTRY (second) */}
       <section style={{ marginBottom: '1rem' }}>
-        <h2 style={{ color: 'deeppink' }}>Pantry Items</h2>
+        <h2 style={{ color: 'darkmagenta' }}>Pantry Items</h2>
         <div className="input-group" style={{ display: 'flex', gap: '0.5rem' }}>
           <input
             type="text"
