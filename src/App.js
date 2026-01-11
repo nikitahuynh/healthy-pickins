@@ -134,14 +134,17 @@ function App() {
         }
         if (!a.perfectRecipe && b.perfectRecipe) return 1; // b perfect
         if (a.perfectRecipe && !b.perfectRecipe) return -1; // a perfect
-        // no perfect, more matches first
-        else if (b.matchCount !== a.matchCount) {
+        // no perfect, fewer missing first
+        const aMissing = Number.isFinite(a.missingCount) ? a.missingCount : 0;
+        const bMissing = Number.isFinite(b.missingCount) ? b.missingCount : 0;
+        if (aMissing !== bMissing) {
+          return aMissing - bMissing; // fewer missing first
+        }
+        else if (b.matchCount !== a.matchCount) { // more matches 
           return b.matchCount - a.matchCount; 
         }
-        else {
+        else { // equal matches, fewer missing
         // fewer missing recipe ingredients first
-          const aMissing = Number.isFinite(a.missingCount) ? a.missingCount : 0;
-          const bMissing = Number.isFinite(b.missingCount) ? b.missingCount : 0;
           if (aMissing !== bMissing) {
             return aMissing - bMissing; // fewer missing first
           }
