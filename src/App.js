@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import './App.css';
-import EcoLogo from './EcoPic3.jpeg';
+import EcoLogo from './EcoPic5.png';
 
 // --- SUPABASE INITIALIZATION ---
 const supabaseUrl = 'https://pbfmfpoctekrcmjzjuhw.supabase.co';
@@ -171,17 +171,8 @@ function App() {
 
   return (
     <div className="App">
+      <h1>Healthy Pickin's</h1>
       <img src={EcoLogo} alt="Logo" className="logo" />
-      <h1>Eco-Friendly Recipe Generator</h1>
-
-      <div className="meal-type-row">
-        <span className="meal-type-label">Meal types:</span>
-        {Object.keys(mealTypes).map(type => (
-          <label key={type} className="checkbox-label">
-            <input type="checkbox" checked={mealTypes[type]} onChange={() => toggleMealType(type)} /> {type}
-          </label>
-        ))}
-      </div>
 
       <div className="input-sections">
         <section>

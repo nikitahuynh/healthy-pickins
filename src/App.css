@@ -3,13 +3,46 @@
   padding: 1rem;
   font-family: 'Poppins', sans-serif;
   position: relative;
+  max-width: 800px;
+  margin: 60px auto;
+}
+
+.input-sections {
+  display: flex;
+  justify-content: center; /* Centers the two columns */
+  gap: 40px;               /* Space between Produce and Pantry */
+  margin: 20px auto;
+  max-width: 1000px;       /* Keeps the layout from getting too wide */
+  padding: 0 20px;
+}
+
+.input-sections section {
+  flex: 1;                 /* Gives both columns equal width */
+  min-width: 300px;        /* Prevents them from getting too squished */
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.input-group {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.input-group input {
+  flex: 1; /* Input takes up remaining space */
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .logo {
   position: absolute;
   top: 25px;
   right: 25px;
-  width: 400px;
+  width: 120px;
   height: auto;
   border-radius: 8px;
 }
