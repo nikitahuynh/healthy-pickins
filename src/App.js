@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useEffect, useState } from 'react';
 // 1. Import your local JSON file directly
 import topRecipesData from './top_recipes.json';
