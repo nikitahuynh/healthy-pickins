@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+
+import EcoLogo from './EcoPic2.webp';
+
 // 1. Import your local JSON file directly
 import topRecipesData from './top_recipes.json';
 
@@ -107,10 +110,24 @@ function App() {
   };
 
   return (
-    <div className="App" style={{ padding: '1rem', fontFamily: "'Poppins', sans-serif"}}>
-      <h1 style={{ color: 'forestgreen' }}>Eco-Friendly Recipe Generator</h1>
+    // <div className="App" style={{ padding: '1rem', fontFamily: "'Poppins', sans-serif"}}>
+    <div className="App" style={{ padding: '1rem', fontFamily: "'Poppins', sans-serif", position: 'relative' }}>
 
-      {/* <h1>Recipe Generator</h1> */}
+      {/* for image */}
+      <img 
+        src={EcoLogo} 
+        alt="Eco Meals Logo" 
+        style={{ 
+          position: 'absolute', 
+          top: '25px', 
+          right: '25px', 
+          width: '400px', // Adjust size as needed
+          height: 'auto',
+          borderRadius: '8px' // Optional: rounds the corners of your JPEG
+        }} 
+      />
+
+      <h1 style={{ color: 'forestgreen' }}>Eco-Friendly Recipe Generator</h1>
 
       {/* MEAL TYPE ROW */}
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1rem' }}>
