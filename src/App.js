@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './App.css'; // Import the new CSS file
-import EcoLogo from './EcoPic3.jpeg';
+import EcoLogo from './EcoPic4Edited.jpeg';
 import topRecipesData from './top_recipes.json';
 
 function App() {
