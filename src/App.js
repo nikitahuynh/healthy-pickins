@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import './App.css'; // Import the new CSS file
 import EcoLogo from './EcoPic4Edited.jpeg';
 import { createClient } from '@supabase/supabase-js';
-// import topRecipesData from './top_recipes.json';
+import './App.css';
+import EcoLogo from './EcoPic5.png';
 
 const supabaseUrl = 'https://pbfmfpoctekrcmjzjuhw.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZm1mcG9jdGVrcmNtanpqdWh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTMwMTIsImV4cCI6MjA4MzY2OTAxMn0.WJFR8Kfk-rf7e6OZ_VP6HWs2fOK8pjnFHVUJcC7ib6o';
@@ -167,17 +168,8 @@ function App() {
 
   return (
     <div className="App">
+      <h1>Healthy Pickin's</h1>
       <img src={EcoLogo} alt="Logo" className="logo" />
-      <h1>Eco-Friendly Recipe Generator</h1>
-
-      <div className="meal-type-row">
-        <span className="meal-type-label">Meal types:</span>
-        {Object.keys(mealTypes).map(type => (
-          <label key={type} className="checkbox-label">
-            <input type="checkbox" checked={mealTypes[type]} onChange={() => toggleMealType(type)} /> {type}
-          </label>
-        ))}
-      </div>
 
       <div className="input-sections">
         <section>
