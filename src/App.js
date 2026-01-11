@@ -139,8 +139,10 @@ function App() {
   };
 
   return (
-    <div className="App" style={{ padding: '1rem', fontFamily: 'Inter, sans-serif'}}>
-      <h1>Recipe Generator</h1>
+    <div className="App" style={{ padding: '1rem', fontFamily: "'Poppins', sans-serif"}}>
+      <h1 style={{ color: 'forestgreen' }}>Eco-Friendly Recipe Generator</h1>
+
+      {/* <h1>Recipe Generator</h1> */}
 
       {/* MEAL TYPE ROW (top) */}
       <div
@@ -190,7 +192,7 @@ function App() {
 
       {/* PRODUCE (first) */}
       <section style={{ marginBottom: '1rem' }}>
-        <h2>Produce</h2>
+        <h2 style={{ color: 'blue' }}>Produce</h2>
         <div className="input-group" style={{ display: 'flex', gap: '0.5rem' }}>
           <input
             type="text"
@@ -238,7 +240,7 @@ function App() {
 
       {/* PANTRY (second) */}
       <section style={{ marginBottom: '1rem' }}>
-        <h2>Pantry Items</h2>
+        <h2 style={{ color: 'deeppink' }}>Pantry Items</h2>
         <div className="input-group" style={{ display: 'flex', gap: '0.5rem' }}>
           <input
             type="text"
