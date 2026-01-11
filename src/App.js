@@ -139,8 +139,8 @@ function App() {
   };
 
   return (
-    <div className="App" style={{ padding: '1rem', fontFamily: 'system-ui' }}>
-      <h1>Hello Kaelyn</h1>
+    <div className="App" style={{ padding: '1rem', fontFamily: 'Inter, sans-serif'}}>
+      <h1>Recipe Generator</h1>
 
       {/* MEAL TYPE ROW (top) */}
       <div
