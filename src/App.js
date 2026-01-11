@@ -66,19 +66,17 @@ function App() {
         return;
       }
 
-      // 1. Get selected meal types for filtering
-      const selectedMeals = Object.entries(mealTypes)
-        .filter(([_, active]) => active)
-        .map(([name]) => name);
-
-      // 2. Build the OR query for partial matches
+      // 1. Get any recipe that contains AT LEAST ONE of your ingredients
       const orQuery = allIngredients
         .map(ing => `ingredients.cs.["${ing}"]`)
         .join(',');
 
       let query = supabase.from('recipes').select('*').or(orQuery);
 
-      // Filter by meal type if any are selected
+      const selectedMeals = Object.entries(mealTypes)
+        .filter(([_, active]) => active)
+        .map(([name]) => name);
+
       if (selectedMeals.length > 0) {
         query = query.in('meal_type', selectedMeals);
       }
@@ -86,22 +84,72 @@ function App() {
       const { data, error: sbError } = await query;
       if (sbError) throw sbError;
 
-      // 3. Rank the recipes based on the count of matching ingredients
-      const rankedData = (data || []).map(recipe => {
-        const recipeIngredients = (recipe.ingredients || []).map(i => i.toLowerCase());
-        const matchCount = allIngredients.filter(input => 
-          recipeIngredients.includes(input)
-        ).length;
+      // 2. Rank the results
+      
+      const rankedData = (data || []).map((recipe) => {
+        const user = (allIngredients || []).map((x) => String(x).toLowerCase().trim());
+        const recipeIngredients = (recipe.ingredients || []).map((i) => String(i).toLowerCase().trim());
 
-        return { ...recipe, matchCount };
+        // Fuzzy "includes" matching: a recipe ingredient matches a required token if it contains it
+        const containsUsers = (user_ing) => recipeIngredients.some((ing) => ing.includes(user_ing));
+
+        const matchedUser = user.filter(containsUsers);
+        const extraUser = user.filter((user_ing) => !containsUsers(user_ing));
+
+        // Extras = recipe ingredients that don't match any required token
+        const missingIngredients = recipeIngredients.filter(
+          (ing) => !user.some((user_ing) => ing.includes(user_ing))
+        );
+
+        // Backwards-compatible fields (per-ingredient perspective)
+        // const matchedRecipeIngredients = matchedUser
+        // recipeIngredients.filter((ing) =>
+        //   user.some((user_ing) => ing.includes(user_ing))
+        // );
+
+        return {
+          ...recipe,
+
+          // Requirements perspective
+          matchedUser,
+          extraUser,
+          missingIngredients,
+          matchCount: matchedUser.length,
+          missingCount: missingIngredients.length,
+          isAllRequirementsMet: missingIngredients.length === 0, // ✅ true even with extras
+        };
       });
 
-      // 4. Sort: Highest matches first
-      rankedData.sort((a, b) => b.matchCount - a.matchCount);
-
+      // ---------- Sorting logic ----------
+      rankedData.sort((a, b) => {
+        // 1) Perfect matches first
+        if (a.isAllRequirementsMet && b.isAllRequirementsMet) {
+          const aTotalIng = Array.isArray(a.ingredients) ? a.ingredients.length : 0;
+          const bTotalIng = Array.isArray(b.ingredients) ? b.ingredients.length : 0;
+          if (bTotalIng !== aTotalIng) {
+            return bTotalIng - aTotalIng; // desc
+          }
+        }
+        if (!a.isAllRequirementsMet && b.isAllRequirementsMet) return 1;
+        if (a.isAllRequirementsMet && !b.isAllRequirementsMet) return -1;
+        // 3) More matches first
+        else if (b.matchCount !== a.matchCount) {
+          return b.matchCount - a.matchCount; // desc
+        }
+        else {
+        // 4) Fewer missing first
+          const aMissing = Number.isFinite(a.missingCount) ? a.missingCount : 0;
+          const bMissing = Number.isFinite(b.missingCount) ? b.missingCount : 0;
+          if (aMissing !== bMissing) {
+            return aMissing - bMissing; // asc
+          }
+        }
+        return 0;
+      });
       setRecipes(rankedData);
       setShowRecipes(true);
       setCurrentPage(0);
+
     } catch (err) {
       console.error('Supabase Error:', err);
       setError(`Database Error: ${err.message}`);
