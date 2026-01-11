@@ -96,18 +96,6 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  const saveToServer = async () => {
-    const payload = { mealTypes: selectedMealTypes, produce, pantry, savedAt: new Date().toISOString() };
-    try {
-      const res = await fetch('/api/save-meal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) alert('Failed to save to server');
-      else alert('Saved to server ✔️');
-    } catch (err) { alert('Network error'); }
-  };
 
   return (
     // <div className="App" style={{ padding: '1rem', fontFamily: "'Poppins', sans-serif"}}>
@@ -234,7 +222,6 @@ function App() {
           Find Recipes
         </button>
         <button onClick={downloadJSON}>Download JSON</button>
-        <button onClick={saveToServer}>Save to Server</button>
       </div>
 
       {/* RECIPE VIEWER (Only shows if showRecipes is true) */}
