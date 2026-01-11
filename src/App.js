@@ -1,33 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import './App.css'; // Import the new CSS file
+import { createClient } from '@supabase/supabase-js';
+import './App.css';
 import EcoLogo from './EcoPic3.jpeg';
-import topRecipesData from './top_recipes.json';
+
+// --- SUPABASE INITIALIZATION ---
+const supabaseUrl = 'https://pbfmfpoctekrcmjzjuhw.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZm1mcG9jdGVrcmNtanpqdWh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTMwMTIsImV4cCI6MjA4MzY2OTAxMn0.WJFR8Kfk-rf7e6OZ_VP6HWs2fOK8pjnFHVUJcC7ib6o';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 function App() {
   const [produceInput, setProduceInput] = useState('');
   const [pantryInput, setPantryInput] = useState('');
-  const [mealTypes, setMealTypes] = useState(() => {
-    try {
-      const saved = localStorage.getItem('ingredients');
-      const parsed = saved ? JSON.parse(saved) : null;
-      return parsed?.mealTypes || { breakfast: false, lunch: false, dinner: false, snack: false };
-    } catch {
-      return { breakfast: false, lunch: false, dinner: false, snack: false };
-    }
-  });
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const [produce, setProduce] = useState(() => {
-    try {
-      const saved = localStorage.getItem('ingredients');
-      return saved ? JSON.parse(saved).produce || [] : [];
-    } catch { return []; }
+    const saved = localStorage.getItem('ingredients');
+    return saved ? (JSON.parse(saved).produce || []) : [];
   });
 
   const [pantry, setPantry] = useState(() => {
-    try {
-      const saved = localStorage.getItem('ingredients');
-      return saved ? JSON.parse(saved).pantry || [] : [];
-    } catch { return []; }
+    const saved = localStorage.getItem('ingredients');
+    return saved ? (JSON.parse(saved).pantry || []) : [];
+  });
+
+  const [mealTypes, setMealTypes] = useState(() => {
+    const saved = localStorage.getItem('ingredients');
+    return saved ? (JSON.parse(saved).mealTypes || { breakfast: false, lunch: false, dinner: false, snack: false }) : { breakfast: false, lunch: false, dinner: false, snack: false };
   });
 
   const [showRecipes, setShowRecipes] = useState(false);
@@ -35,163 +35,176 @@ function App() {
   const itemsPerPage = 5;
 
   useEffect(() => {
-    const payload = { produce, pantry, mealTypes };
-    localStorage.setItem('ingredients', JSON.stringify(payload));
+    localStorage.setItem('ingredients', JSON.stringify({ produce, pantry, mealTypes }));
   }, [produce, pantry, mealTypes]);
 
   const addProduce = () => {
-    const trimmed = produceInput.trim();
-    if (!trimmed) return;
-    setProduce((prev) => [...prev, trimmed]);
+    if (!produceInput.trim()) return;
+    setProduce([...produce, produceInput.trim()]);
     setProduceInput('');
   };
 
   const addPantry = () => {
-    const trimmed = pantryInput.trim();
-    if (!trimmed) return;
-    setPantry((prev) => [...prev, trimmed]);
+    if (!pantryInput.trim()) return;
+    setPantry([...pantry, pantryInput.trim()]);
     setPantryInput('');
   };
 
-  const clearProduce = () => setProduce([]);
-  const clearPantry = () => setPantry([]);
-  const removeProduceItem = (idx) => setProduce((prev) => prev.filter((_, i) => i !== idx));
-  const removePantryItem = (idx) => setPantry((prev) => prev.filter((_, i) => i !== idx));
-
   const toggleMealType = (key) => {
-    setMealTypes((prev) => ({ ...prev, [key]: !prev[key] }));
+    setMealTypes(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const selectedMealTypes = Object.entries(mealTypes)
-    .filter(([_, val]) => val)
-    .map(([key]) => key);
+  // --- UPDATED FETCH LOGIC ---
+  const handleFindRecipes = async () => {
+    setLoading(true);
+    setError(null);
 
-  const handleFindRecipes = () => {
-    setShowRecipes(true);
-    setCurrentPage(0);
+    try {
+      const allIngredients = [...produce, ...pantry]
+        .map(i => i.toLowerCase().trim())
+        .filter(i => i !== '');
+
+      if (allIngredients.length === 0) {
+        setError("Please add at least one ingredient.");
+        setLoading(false);
+        return;
+      }
+
+      // .cs (contains) for jsonb needs the value to look like a JSON array: ["item"]
+      // We escape the double quotes so Supabase sends valid JSON to the database
+      const orQuery = allIngredients
+        .map(ing => `ingredients.cs.["${ing}"]`)
+        .join(',');
+
+      const { data, error: sbError } = await supabase
+        .from('recipes')
+        .select('*')
+        .or(orQuery);
+
+      if (sbError) throw sbError;
+
+      // Sorting the results so recipes with the MOST matches appear first
+      const userIngredients = allIngredients;
+      const sortedData = (data || []).sort((a, b) => {
+        const matchA = a.ingredients?.filter(i => userIngredients.includes(i.toLowerCase())).length || 0;
+        const matchB = b.ingredients?.filter(i => userIngredients.includes(i.toLowerCase())).length || 0;
+        return matchB - matchA;
+      });
+
+      setRecipes(sortedData);
+      setShowRecipes(true);
+      setCurrentPage(0);
+    } catch (err) {
+      console.error('Supabase Error:', err);
+      setError(`Database Error: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const totalPages = Math.ceil(topRecipesData.length / itemsPerPage);
-  const currentRecipes = topRecipesData.slice(
+// end findrecipes
+
+  const totalPages = Math.ceil(recipes.length / itemsPerPage);
+  const currentRecipes = recipes.slice(
     currentPage * itemsPerPage,
     (currentPage + 1) * itemsPerPage
   );
 
-  const downloadJSON = () => {
-    const data = { produce, pantry, mealTypes: selectedMealTypes, savedAt: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'ingredients.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <div className="App">
-      <img src={EcoLogo} alt="Eco Meals Logo" className="logo" />
-
+      <img src={EcoLogo} alt="Logo" className="logo" />
       <h1>Eco-Friendly Recipe Generator</h1>
 
       <div className="meal-type-row">
-        <span className="meal-type-label">Meal type:</span>
-        <label>
-          <input type="checkbox" checked={mealTypes.breakfast} onChange={() => toggleMealType('breakfast')} /> Breakfast
-        </label>
-        <label>
-          <input type="checkbox" checked={mealTypes.lunch} onChange={() => toggleMealType('lunch')} /> Lunch
-        </label>
-        <label>
-          <input type="checkbox" checked={mealTypes.dinner} onChange={() => toggleMealType('dinner')} /> Dinner
-        </label>
-        <label>
-          <input type="checkbox" checked={mealTypes.snack} onChange={() => toggleMealType('snack')} /> Snack
-        </label>
-
-        <span className="selection-indicator">
-          Selected: {selectedMealTypes.length ? selectedMealTypes.join(', ') : 'none'}
-        </span>
+        <span className="meal-type-label">Meal types:</span>
+        {Object.keys(mealTypes).map(type => (
+          <label key={type} className="checkbox-label">
+            <input type="checkbox" checked={mealTypes[type]} onChange={() => toggleMealType(type)} /> {type}
+          </label>
+        ))}
       </div>
 
       <section>
         <h2 className="produce-title">Produce</h2>
         <div className="input-group">
-          <input
-            type="text"
-            placeholder="Enter a produce item"
-            value={produceInput}
-            onChange={(e) => setProduceInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addProduce()}
-          />
-          <button onClick={addProduce}>Add Produce</button>
-          <button onClick={clearProduce}>Clear Produce</button>
+          <input value={produceInput} onChange={(e) => setProduceInput(e.target.value)} placeholder="e.g. Spinach" onKeyDown={(e) => e.key === 'Enter' && addProduce()} />
+          <button onClick={addProduce}>Add</button>
+          <button onClick={() => setProduce([])}>Clear</button>
         </div>
         <ul className="item-list">
           {produce.map((item, i) => (
             <li key={i} className="item-row">
-              <button onClick={() => removeProduceItem(i)}>✕</button> {item}
+              <button onClick={() => setProduce(produce.filter((_, idx) => idx !== i))}>✕</button> {item}
             </li>
           ))}
         </ul>
       </section>
 
       <section>
-        <h2 className="pantry-title">Pantry Items</h2>
+        <h2 className="pantry-title">Pantry</h2>
         <div className="input-group">
-          <input
-            type="text"
-            placeholder="Enter a pantry item"
-            value={pantryInput}
-            onChange={(e) => setPantryInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addPantry()}
-          />
-          <button onClick={addPantry}>Add Pantry Item</button>
-          <button onClick={clearPantry}>Clear Pantry</button>
+          <input value={pantryInput} onChange={(e) => setPantryInput(e.target.value)} placeholder="e.g. Olive Oil" onKeyDown={(e) => e.key === 'Enter' && addPantry()} />
+          <button onClick={addPantry}>Add</button>
+          <button onClick={() => setPantry([])}>Clear</button>
         </div>
         <ul className="item-list">
           {pantry.map((item, i) => (
             <li key={i} className="item-row">
-              <button onClick={() => removePantryItem(i)}>✕</button> {item}
+              <button onClick={() => setPantry(pantry.filter((_, idx) => idx !== i))}>✕</button> {item}
             </li>
           ))}
         </ul>
       </section>
 
       <div className="btn-group">
-        <button onClick={handleFindRecipes} className="btn-primary">Find Recipes</button>
-        <button onClick={downloadJSON}>Download JSON</button>
+        <button onClick={handleFindRecipes} className="btn-primary" disabled={loading}>
+          {loading ? 'Searching...' : 'Find Recipes'}
+        </button>
       </div>
+
+      {error && <p className="error-message">{error}</p>}
 
       {showRecipes && (
         <section className="recipe-section">
-          <h2>Top Recipes</h2>
+          <h2>Matches Found ({recipes.length})</h2>
           <div className="recipe-container">
-            {currentRecipes.map((recipe, index) => (
-              <div key={index} className="recipe-card">
-                <h3>{recipe.name}</h3>
-                <div className="recipe-grid">
-                  <div>
-                    <strong className="have-text">Have:</strong>
-                    <ul className="recipe-list">
-                      {recipe.ingredientsHave?.map((ing, i) => <li key={i}>{ing}</li>)}
-                    </ul>
+            {currentRecipes.length > 0 ? (
+              currentRecipes.map((recipe, index) => (
+                <div key={index} className="recipe-card">
+                  {/* UPDATED: Using 'title' instead of 'name' */}
+                  <h3>{recipe.title}</h3>
+                  
+                  <div className="nutrition-bar">
+                    <span>🔥 {recipe.calories} kcal</span>
+                    <span>🍞 {recipe.carbs}g carbs</span>
+                    <span>🍗 {recipe.protein}g protein</span>
+                    <span>🥑 {recipe.fat}g fat</span>
                   </div>
-                  <div>
-                    <strong className="need-text">Still Need:</strong>
-                    <ul className="recipe-list">
-                      {recipe.ingredientsNeed?.map((ing, i) => <li key={i}>{ing}</li>)}
-                    </ul>
+
+                  <div className="recipe-grid">
+                    {/* UPDATED: Displaying 'ingredient_phrase' or 'ingredients' */}
+                    <div>
+                      <strong>Ingredients:</strong>
+                      <p className="ingredient-list">{recipe.ingredients?.join(', ')}</p>
+                    </div>
+                    <div>
+                      <strong>Instructions:</strong>
+                      <p className="instruction-text">{recipe.instructions}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p>No recipes found matching your ingredients.</p>
+            )}
 
-            <div className="pagination">
-              <button onClick={() => setCurrentPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}>← Previous</button>
-              <span>Page {currentPage + 1} of {totalPages}</span>
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage >= totalPages - 1}>Next →</button>
-            </div>
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 0}>Prev</button>
+                <span>{currentPage + 1} / {totalPages}</span>
+                <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage >= totalPages - 1}>Next</button>
+              </div>
+            )}
           </div>
         </section>
       )}
