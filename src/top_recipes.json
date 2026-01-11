@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Chicken Tacos",
+    "ingredientsHave": ["Chicken", "Tortillas"],
+    "ingredientsNeed": ["Cilantro", "Lime", "Onion"]
+  },
+  {
+    "name": "Apple Salad",
+    "ingredientsHave": ["Apples", "Spinach"],
+    "ingredientsNeed": ["Walnuts", "Balsamic Vinaigrette"]
+  }
+]
