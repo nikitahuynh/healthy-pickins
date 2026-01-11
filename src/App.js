@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import './App.css'; // Import the new CSS file
+import EcoLogo from './EcoPic4Edited.jpeg';
 import { createClient } from '@supabase/supabase-js';
 import './App.css';
 import EcoLogo from './EcoPic5.png';
 
-// --- SUPABASE INITIALIZATION ---
 const supabaseUrl = 'https://pbfmfpoctekrcmjzjuhw.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZm1mcG9jdGVrcmNtanpqdWh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTMwMTIsImV4cCI6MjA4MzY2OTAxMn0.WJFR8Kfk-rf7e6OZ_VP6HWs2fOK8pjnFHVUJcC7ib6o';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -71,7 +72,7 @@ function App() {
         return;
       }
 
-      // 1. Get any recipe that contains AT LEAST ONE of your ingredients
+      // Get any recipe that contains AT LEAST ONE of your ingredients
       const orQuery = allIngredients
         .map(ing => `ingredients.cs.["${ing}"]`)
         .join(',');
@@ -89,64 +90,60 @@ function App() {
       const { data, error: sbError } = await query;
       if (sbError) throw sbError;
 
-      // 2. Rank the results
-      
+      // computing individual recipe rankings
       const rankedData = (data || []).map((recipe) => {
         const user = (allIngredients || []).map((x) => String(x).toLowerCase().trim());
         const recipeIngredients = (recipe.ingredients || []).map((i) => String(i).toLowerCase().trim());
 
-        // Fuzzy "includes" matching: a recipe ingredient matches a required token if it contains it
-        const containsUsers = (user_ing) => recipeIngredients.some((ing) => ing.includes(user_ing));
+        const hasIngredient = (user_ing, recipe_ing) => 
+          recipe_ing.includes(user_ing) || user_ing.includes(recipe_ing);
 
-        const matchedUser = user.filter(containsUsers);
-        const extraUser = user.filter((user_ing) => !containsUsers(user_ing));
+        const recipeContainsUserIng = (user_ing) => 
+          recipeIngredients.some((recipe_ing) => hasIngredient(user_ing, recipe_ing));
 
-        // Extras = recipe ingredients that don't match any required token
+        const matchedUser = user.filter(recipeContainsUserIng);
+        const extraUser = user.filter((user_ing) => !recipeContainsUserIng(user_ing));
+
         const missingIngredients = recipeIngredients.filter(
-          (ing) => !user.some((user_ing) => ing.includes(user_ing))
+          (recipe_ing) => !user.some((user_ing) => hasIngredient(user_ing, recipe_ing))
         );
-
-        // Backwards-compatible fields (per-ingredient perspective)
-        // const matchedRecipeIngredients = matchedUser
-        // recipeIngredients.filter((ing) =>
-        //   user.some((user_ing) => ing.includes(user_ing))
-        // );
 
         return {
           ...recipe,
 
-          // Requirements perspective
+          // ranking variables
           matchedUser,
           extraUser,
           missingIngredients,
           matchCount: matchedUser.length,
           missingCount: missingIngredients.length,
-          isAllRequirementsMet: missingIngredients.length === 0, // ✅ true even with extras
+          perfectRecipe: missingIngredients.length === 0 && matchedUser.length > 0, // ✅ true even with extras
         };
       });
 
-      // ---------- Sorting logic ----------
+
+      // sorting logic
       rankedData.sort((a, b) => {
-        // 1) Perfect matches first
-        if (a.isAllRequirementsMet && b.isAllRequirementsMet) {
+        // perfect matches first
+        if (a.perfectRecipe && b.perfectRecipe) { // both perfect
           const aTotalIng = Array.isArray(a.ingredients) ? a.ingredients.length : 0;
           const bTotalIng = Array.isArray(b.ingredients) ? b.ingredients.length : 0;
           if (bTotalIng !== aTotalIng) {
-            return bTotalIng - aTotalIng; // desc
+            return aTotalIng - bTotalIng; // fewer perfect match ingredients first
           }
         }
-        if (!a.isAllRequirementsMet && b.isAllRequirementsMet) return 1;
-        if (a.isAllRequirementsMet && !b.isAllRequirementsMet) return -1;
-        // 3) More matches first
+        if (!a.perfectRecipe && b.perfectRecipe) return 1; // b perfect
+        if (a.perfectRecipe && !b.perfectRecipe) return -1; // a perfect
+        // no perfect, more matches first
         else if (b.matchCount !== a.matchCount) {
-          return b.matchCount - a.matchCount; // desc
+          return b.matchCount - a.matchCount; 
         }
         else {
-        // 4) Fewer missing first
+        // fewer missing recipe ingredients first
           const aMissing = Number.isFinite(a.missingCount) ? a.missingCount : 0;
           const bMissing = Number.isFinite(b.missingCount) ? b.missingCount : 0;
           if (aMissing !== bMissing) {
-            return aMissing - bMissing; // asc
+            return aMissing - bMissing; // fewer missing first
           }
         }
         return 0;
@@ -222,32 +219,33 @@ function App() {
           <div className="recipe-container">
             {currentRecipes.length > 0 ? (
               currentRecipes.map((recipe, index) => {
-                const userInventory = [...produce, ...pantry].map(i => i.toLowerCase().trim());
-                const recipeIngredients = recipe.ingredients || [];
-                const matched = recipeIngredients.filter(ing => userInventory.includes(ing.toLowerCase()));
-                const missing = recipeIngredients.filter(ing => !userInventory.includes(ing.toLowerCase()));
+                // USE THE PRE-COMPUTED RANKING DATA!
+                const matched = recipe.matchedUser || [];
+                const missing = recipe.missingIngredients || [];
 
                 return (
                   <div key={index} className="recipe-card" onClick={() => setSelectedRecipe(recipe)}>
                     <h3>{recipe.title}</h3>
-                    
+
                     <div className="nutrition-bar">
-                      <span>🔥 {recipe.calories} kcal</span>
-                      <span>🍞 {recipe.carbs}g</span>
-                      <span>🍗 {recipe.protein}g</span>
-                      <span>🥑 {recipe.fat}g</span>
+                      <span> 🔥 calories: {recipe.calories.toFixed(2)}kcal |</span>
+                      <span> 🍞 carbs: {recipe.carbs.toFixed(2)}g |</span>
+                      <span> 🍗 protein: {recipe.protein.toFixed(2)}g |</span>
+                      <span> 🥑 fat: {recipe.fat.toFixed(2)}g</span>
                     </div>
 
                     <div className="ingredient-comparison">
                       <div className="ing-column match-col">
-                        <strong>Matched:</strong>
+                        <strong>Matched ({matched.length}):</strong>
                         <ul>{matched.map((ing, i) => <li key={i}>✅ {ing}</li>)}</ul>
                       </div>
                       <div className="ing-column missing-col">
-                        <strong>Missing:</strong>
+                        <strong>Missing ({missing.length}):</strong>
                         <ul>{missing.map((ing, i) => <li key={i}>❌ {ing}</li>)}</ul>
                       </div>
                     </div>
+
+                    {recipe.perfectRecipe && <p className="perfect-badge">🌟 Perfect Match!</p>}
                     <p className="click-hint">Click for full recipe</p>
                   </div>
                 );
