@@ -107,8 +107,10 @@ function App() {
   };
 
   return (
-    <div className="App" style={{ padding: '1rem', fontFamily: 'system-ui', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>Hello Kaelyn</h1>
+    <div className="App" style={{ padding: '1rem', fontFamily: "'Poppins', sans-serif"}}>
+      <h1 style={{ color: 'forestgreen' }}>Eco-Friendly Recipe Generator</h1>
+
+      {/* <h1>Recipe Generator</h1> */}
 
       {/* MEAL TYPE ROW */}
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1rem' }}>
@@ -122,11 +124,22 @@ function App() {
 
       {/* PRODUCE SECTION */}
       <section style={{ marginBottom: '1rem' }}>
-        <h2>Produce</h2>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <input value={produceInput} onChange={(e) => setProduceInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addProduce()} placeholder="Enter produce" />
-          <button onClick={addProduce}>Add</button>
-          <button onClick={clearProduce}>Clear</button>
+        <h2 style={{ color: 'blue' }}>Produce</h2>
+        <div className="input-group" style={{ display: 'flex', gap: '0.5rem' }}>
+          <input
+            type="text"
+            id="produce-input"
+            placeholder="Enter a produce item"
+            value={produceInput}
+            onChange={(e) => setProduceInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addProduce()}
+          />
+          <button id="add-produce-button" onClick={addProduce}>
+            Add Produce
+          </button>
+          <button id="clear-produce-button" onClick={clearProduce}>
+            Clear Produce
+          </button>
         </div>
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {produce.map((item, i) => (
@@ -139,11 +152,22 @@ function App() {
 
       {/* PANTRY SECTION */}
       <section style={{ marginBottom: '1rem' }}>
-        <h2>Pantry Items</h2>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <input value={pantryInput} onChange={(e) => setPantryInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addPantry()} placeholder="Enter pantry item" />
-          <button onClick={addPantry}>Add</button>
-          <button onClick={clearPantry}>Clear</button>
+        <h2 style={{ color: 'deeppink' }}>Pantry Items</h2>
+        <div className="input-group" style={{ display: 'flex', gap: '0.5rem' }}>
+          <input
+            type="text"
+            id="pantry-input"
+            placeholder="Enter a pantry item"
+            value={pantryInput}
+            onChange={(e) => setPantryInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addPantry()}
+          />
+          <button id="add-pantry-button" onClick={addPantry}>
+            Add Pantry Item
+          </button>
+          <button id="clear-pantry-button" onClick={clearPantry}>
+            Clear Pantry
+          </button>
         </div>
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {pantry.map((item, i) => (
