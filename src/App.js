@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+
+import EcoLogo from './EcoPic2.webp';
+
 // 1. Import your local JSON file directly
 import topRecipesData from './top_recipes.json';
 
@@ -107,19 +110,66 @@ function App() {
   };
 
   return (
-    <div className="App" style={{ padding: '1rem', fontFamily: "'Poppins', sans-serif"}}>
-      <h1 style={{ color: 'forestgreen' }}>Eco-Friendly Recipe Generator</h1>
+    // <div className="App" style={{ padding: '1rem', fontFamily: "'Poppins', sans-serif"}}>
+    <div className="App" style={{ padding: '1rem', fontFamily: "'Poppins', sans-serif", position: 'relative' }}>
 
-      {/* <h1>Recipe Generator</h1> */}
+      {/* for image */}
+      <img 
+        src={EcoLogo} 
+        alt="Eco Meals Logo" 
+        style={{ 
+          position: 'absolute', 
+          top: '25px', 
+          right: '25px', 
+          width: '400px', // Adjust size as needed
+          height: 'auto',
+          borderRadius: '8px' // Optional: rounds the corners of your JPEG
+        }} 
+      />
+
+      <h1 style={{ color: 'forestgreen' }}>Eco-Friendly Recipe Generator</h1>
 
       {/* MEAL TYPE ROW */}
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1rem' }}>
         <span style={{ fontWeight: 600 }}>Meal type:</span>
-        {['breakfast', 'lunch', 'dinner', 'snack'].map(type => (
-          <label key={type} style={{ textTransform: 'capitalize' }}>
-            <input type="checkbox" checked={mealTypes[type]} onChange={() => toggleMealType(type)} /> {type}
-          </label>
-        ))}
+
+        <label>
+          <input
+            type="checkbox"
+            checked={mealTypes.breakfast}
+            onChange={() => toggleMealType('breakfast')}
+          />{' '}
+          Breakfast
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={mealTypes.lunch}
+            onChange={() => toggleMealType('lunch')}
+          />{' '}
+          Lunch
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={mealTypes.dinner}
+            onChange={() => toggleMealType('dinner')}
+          />{' '}
+          Dinner
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={mealTypes.snack}
+            onChange={() => toggleMealType('snack')}
+          />{' '}
+          Snack
+        </label>
+
+        {/* Small indicator of selection */}
+        <span style={{ marginCenter: 'auto', color: '#555' }}>
+          Selected: {selectedMealTypes.length ? selectedMealTypes.join(', ') : 'none'}
+        </span>
       </div>
 
       {/* PRODUCE SECTION */}
@@ -152,7 +202,7 @@ function App() {
 
       {/* PANTRY SECTION */}
       <section style={{ marginBottom: '1rem' }}>
-        <h2 style={{ color: 'deeppink' }}>Pantry Items</h2>
+        <h2 style={{ color: 'darkmagenta' }}>Pantry Items</h2>
         <div className="input-group" style={{ display: 'flex', gap: '0.5rem' }}>
           <input
             type="text"
