@@ -1,60 +1,47 @@
-
-// src/App.js
 import React, { useEffect, useState } from 'react';
+// 1. Import your local JSON file directly
+import topRecipesData from './top_recipes.json';
 
 function App() {
-  // Inputs
+  // --- EXISTING STATE ---
   const [produceInput, setProduceInput] = useState('');
   const [pantryInput, setPantryInput] = useState('');
-
-  // Meal types (load from localStorage on first render)
   const [mealTypes, setMealTypes] = useState(() => {
     try {
       const saved = localStorage.getItem('ingredients');
       const parsed = saved ? JSON.parse(saved) : null;
-      // Store as an object for easy checkbox control
-      return parsed?.mealTypes || {
-        breakfast: false,
-        lunch: false,
-        dinner: false,
-        snack: false,
-      };
+      return parsed?.mealTypes || { breakfast: false, lunch: false, dinner: false, snack: false };
     } catch {
-      return {
-        breakfast: false,
-        lunch: false,
-        dinner: false,
-        snack: false,
-      };
+      return { breakfast: false, lunch: false, dinner: false, snack: false };
     }
   });
 
-  // Lists (load from localStorage on first render)
   const [produce, setProduce] = useState(() => {
     try {
       const saved = localStorage.getItem('ingredients');
       return saved ? JSON.parse(saved).produce || [] : [];
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   });
 
   const [pantry, setPantry] = useState(() => {
     try {
       const saved = localStorage.getItem('ingredients');
       return saved ? JSON.parse(saved).pantry || [] : [];
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   });
 
-  // Persist combined data whenever any part changes
+  // --- NEW STATE FOR RECIPE VIEWER ---
+  const [showRecipes, setShowRecipes] = useState(false); // Controls if the section is visible
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 5;
+
+  // Persist ingredients
   useEffect(() => {
     const payload = { produce, pantry, mealTypes };
     localStorage.setItem('ingredients', JSON.stringify(payload));
   }, [produce, pantry, mealTypes]);
 
-  // Add handlers
+  // Handlers
   const addProduce = () => {
     const trimmed = produceInput.trim();
     if (!trimmed) return;
@@ -69,36 +56,35 @@ function App() {
     setPantryInput('');
   };
 
-  // Clear handlers
   const clearProduce = () => setProduce([]);
   const clearPantry = () => setPantry([]);
+  const removeProduceItem = (idx) => setProduce((prev) => prev.filter((_, i) => i !== idx));
+  const removePantryItem = (idx) => setPantry((prev) => prev.filter((_, i) => i !== idx));
 
-  // Remove individual items by index
-  const removeProduceItem = (idx) => {
-    setProduce((prev) => prev.filter((_, i) => i !== idx));
+  const toggleMealType = (key) => {
+    setMealTypes((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const removePantryItem = (idx) => {
-    setPantry((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  // Selected meal types (array)
   const selectedMealTypes = Object.entries(mealTypes)
     .filter(([_, val]) => val)
-    .map(([key]) => key); // e.g., ["breakfast","snack"]
+    .map(([key]) => key);
 
-  // Download a single JSON file (produce first, then pantry)
+  // --- TRIGGER FIND RECIPES ---
+  const handleFindRecipes = () => {
+    setShowRecipes(true);
+    setCurrentPage(0); // Reset to page 1 whenever searching
+  };
+
+  // Pagination Logic using the imported JSON data
+  const totalPages = Math.ceil(topRecipesData.length / itemsPerPage);
+  const currentRecipes = topRecipesData.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
+
   const downloadJSON = () => {
-    const data = {
-      // Ordering keys like this ensures JSON.stringify writes produce first.
-      produce,
-      pantry,
-      mealTypes: selectedMealTypes, // record selections
-      savedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json',
-    });
+    const data = { produce, pantry, mealTypes: selectedMealTypes, savedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -107,35 +93,17 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Save to server (Express backend) to append to meals.json
   const saveToServer = async () => {
-    const payload = {
-      mealTypes: selectedMealTypes,
-      produce,
-      pantry,
-      savedAt: new Date().toISOString(),
-    };
-
+    const payload = { mealTypes: selectedMealTypes, produce, pantry, savedAt: new Date().toISOString() };
     try {
       const res = await fetch('/api/save-meal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) {
-        const msg = await res.text();
-        alert('Failed to save to server: ' + msg);
-      } else {
-        alert('Saved to server ✔️');
-      }
-    } catch (err) {
-      alert('Network error saving to server: ' + String(err));
-    }
-  };
-
-  // Toggle meal type checkbox
-  const toggleMealType = (key) => {
-    setMealTypes((prev) => ({ ...prev, [key]: !prev[key] }));
+      if (!res.ok) alert('Failed to save to server');
+      else alert('Saved to server ✔️');
+    } catch (err) { alert('Network error'); }
   };
 
   return (
@@ -144,11 +112,8 @@ function App() {
 
       {/* <h1>Recipe Generator</h1> */}
 
-      {/* MEAL TYPE ROW (top) */}
-      <div
-        id="meal-type-row"
-        style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1rem' }}
-      >
+      {/* MEAL TYPE ROW */}
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1rem' }}>
         <span style={{ fontWeight: 600 }}>Meal type:</span>
 
         <label>
@@ -190,7 +155,7 @@ function App() {
         </span>
       </div>
 
-      {/* PRODUCE (first) */}
+      {/* PRODUCE SECTION */}
       <section style={{ marginBottom: '1rem' }}>
         <h2 style={{ color: 'blue' }}>Produce</h2>
         <div className="input-group" style={{ display: 'flex', gap: '0.5rem' }}>
@@ -209,36 +174,16 @@ function App() {
             Clear Produce
           </button>
         </div>
-
-        <ul
-          id="produce-list"
-          style={{ marginTop: '0.75rem', listStyle: 'none', paddingLeft: 0 }}
-        >
+        <ul style={{ listStyle: 'none', padding: 0 }}>
           {produce.map((item, i) => (
-            <li
-              key={`produce-${item}-${i}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                marginBottom: '0.25rem',
-              }}
-            >
-              
-              <button
-                onClick={() => removeProduceItem(i)}
-                aria-label={`Remove ${item} from produce`}
-                title="Remove"
-              >
-                ✕
-              </button>
-              <span>{item}</span>
+            <li key={i} style={{ display: 'flex', gap: '0.5rem', marginTop: '4px' }}>
+              <button onClick={() => removeProduceItem(i)}>✕</button> {item}
             </li>
           ))}
         </ul>
       </section>
 
-      {/* PANTRY (second) */}
+      {/* PANTRY SECTION */}
       <section style={{ marginBottom: '1rem' }}>
         <h2 style={{ color: 'darkmagenta' }}>Pantry Items</h2>
         <div className="input-group" style={{ display: 'flex', gap: '0.5rem' }}>
@@ -257,42 +202,58 @@ function App() {
             Clear Pantry
           </button>
         </div>
-
-        <ul
-          id="pantry-list"
-          style={{ marginTop: '0.75rem', listStyle: 'none', paddingLeft: 0 }}
-        >
+        <ul style={{ listStyle: 'none', padding: 0 }}>
           {pantry.map((item, i) => (
-            <li
-              key={`pantry-${item}-${i}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                marginBottom: '0.25rem',
-              }}
-            >
-              <button
-                onClick={() => removePantryItem(i)}
-                aria-label={`Remove ${item} from pantry`}
-                title="Remove"
-              >
-                ✕
-              </button>
-              <span>{item}</span>
-
+            <li key={i} style={{ display: 'flex', gap: '0.5rem', marginTop: '4px' }}>
+              <button onClick={() => removePantryItem(i)}>✕</button> {item}
             </li>
           ))}
         </ul>
       </section>
 
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <button id="search-recipes-btn" className="primary-btn">
+      {/* ACTION BUTTONS */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem' }}>
+        <button onClick={handleFindRecipes} style={{ background: '#007bff', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>
           Find Recipes
         </button>
         <button onClick={downloadJSON}>Download JSON</button>
         <button onClick={saveToServer}>Save to Server</button>
       </div>
+
+      {/* RECIPE VIEWER (Only shows if showRecipes is true) */}
+      {showRecipes && (
+        <section style={{ borderTop: '2px solid #eee', paddingTop: '1rem' }}>
+          <h2>Top Recipes</h2>
+          <div style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '1rem', background: '#f9f9f9' }}>
+            {currentRecipes.map((recipe, index) => (
+              <div key={index} style={{ marginBottom: '1.5rem', borderBottom: '1px solid #ddd', paddingBottom: '1rem' }}>
+                <h3 style={{ color: '#333', marginTop: 0 }}>{recipe.name}</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <strong style={{ color: 'green' }}>Have:</strong>
+                    <ul style={{ fontSize: '0.9rem', paddingLeft: '1.2rem' }}>
+                      {recipe.ingredientsHave?.map((ing, i) => <li key={i}>{ing}</li>)}
+                    </ul>
+                  </div>
+                  <div>
+                    <strong style={{ color: 'red' }}>Still Need:</strong>
+                    <ul style={{ fontSize: '0.9rem', paddingLeft: '1.2rem' }}>
+                      {recipe.ingredientsNeed?.map((ing, i) => <li key={i}>{ing}</li>)}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Pagination Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+              <button onClick={() => setCurrentPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}>← Previous</button>
+              <span>Page {currentPage + 1} of {totalPages}</span>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage >= totalPages - 1}>Next →</button>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
