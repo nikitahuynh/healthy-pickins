@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import './App.css'; // Import the new CSS file
-import EcoLogo from './EcoPic4Edited.jpeg';
 import { createClient } from '@supabase/supabase-js';
 import './App.css';
 import EcoLogo from './EcoPic5.png';
