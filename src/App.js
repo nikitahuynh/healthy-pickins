@@ -281,15 +281,42 @@ function App() {
         <div className="modal-overlay" onClick={() => setSelectedRecipe(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="close-btn" onClick={() => setSelectedRecipe(null)}>✕</button>
-            <h2>{selectedRecipe.title}</h2>
+
+            <h2 className="modal-title">{selectedRecipe.title}</h2>
+
             <div className="modal-body">
-              <section>
-                <h4>Ingredient Details:</h4>
-                <p className="ingredient-phrase">{selectedRecipe.ingredient_phrase}</p>
+              <section className="modal-section">
+                <h4>Ingredient Details</h4>
+                <div className="ingredient-two-col">
+                  {/* We split by comma or newline, then map to individual items */}
+                  {String(selectedRecipe.ingredient_phrase || "")
+                    .split(/,|\n/)
+                    .filter(item => item.trim() !== "")
+                    .map((phrase, i) => (
+                      <div key={i} className="ingredient-line">• {phrase.trim()}</div>
+                    ))
+                  }
+                </div>
               </section>
-              <section>
-                <h4>Instructions:</h4>
-                <p className="instruction-text">{selectedRecipe.instructions}</p>
+
+              <section className="modal-section">
+                <h4>Instructions</h4>
+                <div className="instruction-steps">
+                  {/* Split by period followed by a space to create new steps */}
+                  {String(selectedRecipe.instructions || "")
+                    .split(/\. /)
+                    .filter(step => step.trim() !== "")
+                    .map((step, i) => (
+                      <div key={i} className="instruction-step">
+                        {/* i + 1 ensures we start at 1 instead of 0 */}
+                        <span className="step-number">{i + 1}) </span>
+                        <span className="step-text">
+                          {step.trim()}{!step.endsWith('.') && '.'}
+                        </span>
+                      </div>
+                    ))
+                  }
+                </div>
               </section>
             </div>
           </div>
