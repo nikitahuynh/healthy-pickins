@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import './App.css';
-import EcoLogo from './EcoPic3.jpeg';
-
-// --- SUPABASE INITIALIZATION ---
-const supabaseUrl = 'https://pbfmfpoctekrcmjzjuhw.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZm1mcG9jdGVrcmNtanpqdWh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTMwMTIsImV4cCI6MjA4MzY2OTAxMn0.WJFR8Kfk-rf7e6OZ_VP6HWs2fOK8pjnFHVUJcC7ib6o';
-const supabase = createClient(supabaseUrl, supabaseKey);
+import './App.css'; // Import the new CSS file
+import EcoLogo from './EcoPic4Edited.jpeg';
+import topRecipesData from './top_recipes.json';
 
 function App() {
   const [produceInput, setProduceInput] = useState('');
