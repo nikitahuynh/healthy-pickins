@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import EcoLogo from './EcoPic2.webp';
+import EcoLogo from './EcoPic3.jpeg';
 
 // 1. Import your local JSON file directly
 import topRecipesData from './top_recipes.json';
